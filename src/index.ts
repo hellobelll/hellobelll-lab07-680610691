@@ -30,33 +30,22 @@ app.get("/api/students", (req: Request, res: Response) => {
   try {
     const program = req.query.program;
     const studentId = req.query.studentId;
-
+    let filtred_students = students;
     if (studentId) {
-      const filtered_students = students.filter(
+        filtred_students = students.filter(
         (student) => student.studentId === studentId
       );
-      return res.json({
-        success: true,
-        count: filtered_students.length,
-        data: filtered_students,
-      });
     }
 
     if (program) {
-      const filtered_students = students.filter(
+       filtred_students = filtred_students.filter(
         (student) => student.program === program
       );
-      return res.json({
-        success: true,
-        count: filtered_students.length,
-        data: filtered_students,
-      });
     }
-
     return res.json({
       success: true,
-      count: students.length,
-      data: students,
+      count: filtred_students.length,
+      data: filtred_students,
     });
   } catch (err) {
     return res.json({
