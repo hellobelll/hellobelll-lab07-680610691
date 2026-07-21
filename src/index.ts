@@ -25,26 +25,39 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // GET /students
-// get students (by program)
-app.get("/students", (req: Request, res: Response) => {
+// get students (by program or studentId)
+app.get("/api/students", (req: Request, res: Response) => {
   try {
     const program = req.query.program;
+    const studentId = req.query.studentId;
+
+    if (studentId) {
+      const filtered_students = students.filter(
+        (student) => student.studentId === studentId
+      );
+      return res.json({
+        success: true,
+        count: filtered_students.length,
+        data: filtered_students,
+      });
+    }
 
     if (program) {
-      let filtered_students = students.filter(
+      const filtered_students = students.filter(
         (student) => student.program === program
       );
       return res.json({
         success: true,
+        count: filtered_students.length,
         data: filtered_students,
       });
-    } else {
-      return res.json({
-        success: true,
-        count: students.length,
-        data: students,
-      });
     }
+
+    return res.json({
+      success: true,
+      count: students.length,
+      data: students,
+    });
   } catch (err) {
     return res.json({
       success: false,
@@ -56,10 +69,9 @@ app.get("/students", (req: Request, res: Response) => {
 
 // POST /students, body = {new student data}
 // add a new student
-app.post("/students", (req: Request, res: Response) => {
+app.post("/api/students", (req: Request, res: Response) => {
   try {
     const body = req.body as Student;
-
     // validate req.body with predefined validator
     const result = zStudentPostBody.safeParse(body); // check zod
     if (!result.success) {
@@ -111,7 +123,6 @@ app.put("/students", (req: Request, res: Response) => {
     const result = zStudentPutBody.safeParse(body); // check zod
     if (!result.success) {
       return res.json({
-        message: "Validation failed",
         errors: result.error.issues[0]?.message,
       });
     }
@@ -149,13 +160,50 @@ app.put("/students", (req: Request, res: Response) => {
 });
 
 // DELETE /students, body = {studentId}
-app.delete("/students", (req: Request, res: Response) => {
-  res.json({
-    message: "Implement this!"
-  })
-});
+app.delete("/api/students", (req: Request, res: Response) => {
+  try {
+    const body = req.body as { studentId?: string };
+    const result = zStudentDeleteBody.safeParse(body);
+    if (!result.success) {
+      return res.status(404).json({
+        ok: false,
+        errors: result.error.issues[0]?.message,
+      });
+    }
 
-// GET /api/me
+    const { studentId } = result.data;
+    const foundIndex = students.findIndex(
+      (student) => student.studentId === studentId
+    );
+
+    if (foundIndex === -1) {
+      return res.status(404).json({
+        ok: false,
+        message: "Student ID does not exist",
+      });
+    }
+
+    const removedStudent = students.splice(foundIndex, 1);
+
+    return res.json({
+      ok: true,
+      message: `Student Id ${studentId} has been deleted`,
+    });
+  } catch (err) {
+    return res.status(404).json({
+      ok: false,
+      message: "Something is wrong, please try again",
+      error: err,
+    });
+  }
+});
+app.get("/api/me",(require,res) =>{
+  return res.json({
+    ok:"true",
+    fullname:"Parattakorn Klaikaeo",
+    studentId:"680610691"
+  })
+})
 
 app.listen(port, async () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
